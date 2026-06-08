@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  predictions UserPrediction[]
+  preferences UserPreference?
+
+  @@map("users")
+}
+
+model UserPreference {
+  id                  String @id @default(uuid())
+  userId              String @unique @map("user_id")
+  notificationLevel   String @default("all") @map("notification_level")
+  defaultLeague       String? @map("default_league")
+  theme               String @default("dark")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model League {
+  id      String @id
+  name    String
+  country String
+  logo    String?
+
+  matches Match[]
+
+  @@map("leagues")
+}
+
+model Team {
+  id      String @id
+  name    String
+  short   String?
+  logo    String?
+
+  homeMatches Match[] @relation("HomeTeam")
+  awayMatches Match[] @relation("AwayTeam")
+
+  @@map("teams")
+}
+
+model Match {
+  id           String   @id @default(uuid())
+  externalId   String?  @unique @map("external_id")
+  leagueId     String   @map("league_id")
+  homeTeamId   String   @map("home_team_id")
+  awayTeamId   String   @map("away_team_id")
+  homeScore    Int?     @map("home_score")
+  awayScore    Int?     @map("away_score")
+  status       String   @default("SCHEDULED")
+  kickoff      DateTime
+  season       String?
+  matchday     Int?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  league    League @relation(fields: [leagueId], references: [id])
+  homeTeam  Team   @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam  Team   @relation("AwayTeam", fields: [awayTeamId], references: [id])
+
+  predictions UserPrediction[]
+
+  @@map("matches")
+}
+
+model UserPrediction {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  matchId    String   @map("match_id")
+  predictedWinner String @map("predicted_winner")
+  confidence Float
+  result     String?
+  profit     Float?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@map("user_predictions")
+}
+
+model ModelRecord {
+  id            String   @id @default(uuid())
+  name          String
+  version       String
+  sport         String
+  accuracy      Float?
+  logLoss       Float?   @map("log_loss")
+  brierScore    Float?   @map("brier_score")
+  roi           Float?
+  trainingSamples Int?   @map("training_samples")
+  isChampion    Boolean  @default(false) @map("is_champion")
+  params        Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@unique([name, version])
+  @@map("model_records")
+}
+
+model PredictionCache {
+  id        String   @id @default(uuid())
+  matchKey  String   @unique @map("match_key")
+  result    Json
+  confidence Float
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+
+  @@map("prediction_cache")
+}

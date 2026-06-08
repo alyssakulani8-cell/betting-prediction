@@ -1,0 +1,66 @@
+name: Weekly Model Training
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 6 AM UTC
+  workflow_dispatch:
+    inputs:
+      sport:
+        description: 'Sport to train'
+        required: true
+        default: 'football'
+        type: choice
+        options:
+          - football
+          - basketball
+      seasons:
+        description: 'Seasons (comma separated)'
+        required: false
+        default: '2024,2025'
+
+jobs:
+  train:
+    name: Train ${{ inputs.sport || 'football' }} Model
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Train model
+        run: |
+          python scripts/train_pipeline.py \
+            --sport ${{ inputs.sport || 'football' }} \
+            --seasons $(echo '${{ inputs.seasons || "2024,2025" }}' | tr ',' ' ') \
+            --trials 30
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          BASKETBALL_API_KEY: ${{ secrets.BASKETBALL_API_KEY }}
+
+      - name: Run backtest
+        run: python scripts/backtest.py --sport ${{ inputs.sport || 'football' }} --kelly
+
+      - name: Upload model artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-models-${{ inputs.sport || 'football' }}
+          path: ml/models/registry/
+          retention-days: 90
+
+      - name: Commit updated model manifest
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add ml/models/registry/manifest.json
+          git diff --staged --quiet || git commit -m "chore: update ${{ inputs.sport || 'football' }} model manifest [skip ci]"
+          git push
