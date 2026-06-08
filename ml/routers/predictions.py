@@ -1,44 +1,92 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+import pandas as pd
+
+from services.model_service import model_service
 
 router = APIRouter()
 
-class MatchFeatures(BaseModel):
-    home_win_rate: float
-    away_win_rate: float
-    home_avg_goals: float
-    away_avg_goals: float
-    home_avg_conceded: float
-    away_avg_conceded: float
-    home_xg: float
-    away_xg: float
-    home_form_score: float
-    away_form_score: float
-    h2h_home_wins: int
-    h2h_away_wins: int
-    h2h_draws: int
 
-class PredictionResult(BaseModel):
-    home_win_prob: float
-    draw_prob: float
-    away_win_prob: float
-    predicted_home_goals: float
-    predicted_away_goals: float
+class FootballMatchInput(BaseModel):
+    home_team_id: str
+    away_team_id: str
+    home_team_name: str
+    away_team_name: str
+    league: Optional[str] = "PL"
+    season: Optional[str] = None
+    odds_home: Optional[float] = None
+    odds_draw: Optional[float] = None
+    odds_away: Optional[float] = None
+    home_injury_index: Optional[float] = 0.0
+    away_injury_index: Optional[float] = 0.0
+
+
+class BasketballMatchInput(BaseModel):
+    home_team_id: str
+    away_team_id: str
+    home_team_name: str
+    away_team_name: str
+    odds_home: Optional[float] = None
+    odds_away: Optional[float] = None
+    total_line: Optional[float] = None
+    home_injury_index: Optional[float] = 0.0
+    away_injury_index: Optional[float] = 0.0
+
+
+class PredictionResponse(BaseModel):
+    prediction: int
     confidence: float
+    predicted_outcome: str
+    home_win_prob: float
+    draw_prob: Optional[float] = None
+    away_win_prob: float
+    probabilities: List[float]
+    model: str
+    timestamp: str
 
-@router.post("/predict", response_model=PredictionResult)
-async def predict(features: MatchFeatures):
-    # Placeholder: model inference will go here
-    return PredictionResult(
-        home_win_prob=0.45,
-        draw_prob=0.25,
-        away_win_prob=0.30,
-        predicted_home_goals=1.8,
-        predicted_away_goals=1.2,
-        confidence=0.72,
-    )
 
-@router.post("/predict-batch")
-async def predict_batch(matches: list[MatchFeatures]):
-    return [await predict(m) for m in matches]
+@router.post("/football", response_model=PredictionResponse)
+async def predict_football(match: FootballMatchInput):
+    try:
+        result = model_service.predict_football(match.model_dump())
+        return PredictionResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/basketball", response_model=PredictionResponse)
+async def predict_basketball(match: BasketballMatchInput):
+    try:
+        result = model_service.predict_basketball(match.model_dump())
+        return PredictionResponse(**result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/football/batch")
+async def predict_football_batch(matches: List[FootballMatchInput]):
+    return [model_service.predict_football(m.model_dump()) for m in matches]
+
+
+@router.post("/basketball/batch")
+async def predict_basketball_batch(matches: List[BasketballMatchInput]):
+    return [model_service.predict_basketball(m.model_dump()) for m in matches]
+
+
+@router.get("/model-info")
+async def model_info(sport: str = Query("football", regex="^(football|basketball)$")):
+    info = model_service.get_champion_info(sport)
+    if info is None:
+        raise HTTPException(status_code=404, detail=f"No champion model for {sport}")
+    return info
+
+
+@router.post("/reload")
+async def reload_models():
+    football = model_service.load_champion("football")
+    basketball = model_service.load_champion("basketball")
+    return {
+        "football_champion_loaded": football,
+        "basketball_champion_loaded": basketball,
+    }

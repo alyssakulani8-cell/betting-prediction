@@ -1,23 +1,90 @@
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+from datetime import datetime
+import threading
+
+from scripts.train_pipeline import TrainingPipeline
 
 router = APIRouter()
 
+_training_status = {
+    "is_running": False,
+    "sport": None,
+    "started_at": None,
+    "progress": 0.0,
+    "result": None,
+    "error": None,
+}
+
+
 class TrainingConfig(BaseModel):
-    model_type: str = "xgboost"  # xgboost, catboost, neural_network
-    test_size: float = 0.2
-    random_state: int = 42
-    hyperparameters: Optional[dict] = None
+    sport: str = "football"
+    leagues: Optional[List[str]] = None
+    seasons: Optional[List[str]] = None
+    n_trials: int = 30
+
+
+def _run_training(config: TrainingConfig):
+    global _training_status
+    try:
+        _training_status["is_running"] = True
+        _training_status["sport"] = config.sport
+        _training_status["started_at"] = datetime.now().isoformat()
+        _training_status["progress"] = 0.0
+        _training_status["error"] = None
+
+        pipeline = TrainingPipeline(sport=config.sport)
+        result = pipeline.run(
+            leagues=config.leagues,
+            seasons=config.seasons,
+            tune=True,
+            n_trials=config.n_trials,
+        )
+        _training_status["result"] = result
+        _training_status["progress"] = 1.0
+
+    except Exception as e:
+        _training_status["error"] = str(e)
+    finally:
+        _training_status["is_running"] = False
+
 
 @router.post("/train")
-async def train_model(config: TrainingConfig, background_tasks: BackgroundTasks):
+async def start_training(config: TrainingConfig, background_tasks: BackgroundTasks):
+    if _training_status["is_running"]:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Training already running for {_training_status['sport']} since {_training_status['started_at']}"
+        )
+
+    thread = threading.Thread(target=_run_training, args=(config,), daemon=True)
+    thread.start()
+
     return {
         "status": "training_started",
-        "model_type": config.model_type,
-        "message": "Training pipeline will execute in background",
+        "sport": config.sport,
+        "message": "Training running in background. Check /status for progress.",
     }
+
 
 @router.get("/status")
 async def training_status():
-    return {"status": "idle", "last_trained": None, "accuracy": None}
+    status = _training_status.copy()
+    if status["result"]:
+        status["result"] = {
+            "version": status["result"]["version"],
+            "sport": status["result"]["sport"],
+            "metrics": status["result"]["metrics"],
+            "training_samples": status["result"]["training_samples"],
+        }
+    return status
+
+
+@router.get("/history")
+async def training_history(sport: str = Query("football", regex="^(football|basketball)$")):
+    from models.registry import ModelRegistry
+    from config import config
+    registry = ModelRegistry(registry_path=config.registry_path)
+    history = registry.get_performance_history(f"{sport}_ensemble")
+    return {"sport": sport, "history": history}
