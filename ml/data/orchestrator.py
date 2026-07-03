@@ -9,8 +9,10 @@ import pandas as pd
 
 from config import config
 from .sources.football_data_org import FootballDataOrg
+from .sources.football_data_uk import FootballDataCoUK
 from .sources.odds_api import OddsAPI
 from .sources.basketball_api import BasketballAPI
+from .sources.backend_db import BackendDB
 
 
 class DataOrchestrator:
@@ -29,6 +31,35 @@ class DataOrchestrator:
             api_key=config.basketball_api_key,
             base_url=config.basketball_base_url,
         ) if config.basketball_api_key else None
+
+        self.backend_db = BackendDB(
+            db_path=config.backend_db_path,
+        ) if config.backend_db_path else None
+
+        self.football_uk = FootballDataCoUK()
+
+    def fetch_football_uk_dataset(
+        self,
+        leagues: Optional[list[str]] = None,
+        start_season: str = "2020",
+        end_season: str = "2025",
+    ) -> pd.DataFrame:
+        leagues = leagues or list(FootballDataCoUK.LEAGUE_CODES.keys())
+        all_matches = []
+        for div in leagues:
+            matches = self.football_uk.fetch_seasons(div, start_season, end_season)
+            all_matches.extend(matches)
+
+        df = pd.DataFrame(all_matches)
+        if df.empty:
+            return df
+
+        df["utc_date"] = pd.to_datetime(df["utc_date"])
+        df["home_score"] = pd.to_numeric(df["home_score"], errors="coerce")
+        df["away_score"] = pd.to_numeric(df["away_score"], errors="coerce")
+        df = df.dropna(subset=["home_score", "away_score"])
+        df = df.sort_values("utc_date").reset_index(drop=True)
+        return df
 
     def fetch_football_dataset(
         self,
@@ -91,6 +122,22 @@ class DataOrchestrator:
             df = self._merge_odds(df, odds_data)
 
         df = df.sort_values("date").reset_index(drop=True)
+        return df
+
+    def fetch_backend_football_dataset(self) -> pd.DataFrame:
+        if not self.backend_db:
+            raise RuntimeError("BACKEND_DB_PATH not configured in .env")
+
+        matches = self.backend_db.fetch_all_football()
+        df = pd.DataFrame(matches)
+        if df.empty:
+            return df
+
+        df["utc_date"] = pd.to_datetime(df["utc_date"])
+        df["home_score"] = pd.to_numeric(df["home_score"], errors="coerce")
+        df["away_score"] = pd.to_numeric(df["away_score"], errors="coerce")
+        df = df.dropna(subset=["home_score", "away_score"])
+        df = df.sort_values("utc_date").reset_index(drop=True)
         return df
 
     def _fetch_odds_for_matches(self, df: pd.DataFrame, sport: str) -> pd.DataFrame:

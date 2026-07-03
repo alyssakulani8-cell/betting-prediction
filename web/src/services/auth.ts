@@ -18,4 +18,11 @@ export const authService = {
     })
     return data
   },
+  updateProfile: async (updates: { name?: string; notificationLevel?: string; defaultLeague?: string; theme?: string }) => {
+    const token = localStorage.getItem('token')
+    const { data } = await api.put('/auth/profile', updates, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return data
+  },
 }

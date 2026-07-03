@@ -4,6 +4,33 @@ export interface User {
   name: string
 }
 
+export interface UserPrediction {
+  id: string
+  userId: string
+  matchId: string
+  predictedWinner: 'HOME_WIN' | 'DRAW' | 'AWAY_WIN'
+  confidence: number
+  result: string | null
+  profit: number | null
+  createdAt: string
+  match: {
+    id: string
+    homeTeam: { id: string; name: string; short?: string }
+    awayTeam: { id: string; name: string; short?: string }
+    league: { id: string; name: string; country: string }
+    homeScore: number | null
+    awayScore: number | null
+    status: string
+    kickoff: string
+    aiPrediction?: {
+      homeWinProb: number
+      drawProb: number | null
+      awayWinProb: number
+      confidence: number
+    } | null
+  }
+}
+
 export interface Prediction {
   id: string
   homeTeam: string

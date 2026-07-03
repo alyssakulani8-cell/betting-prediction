@@ -1,10 +1,13 @@
 export const LEAGUES = [
-  { id: 'pl', name: 'Premier League', country: 'England' },
-  { id: 'laliga', name: 'La Liga', country: 'Spain' },
-  { id: 'sa', name: 'Serie A', country: 'Italy' },
-  { id: 'bl', name: 'Bundesliga', country: 'Germany' },
-  { id: 'ligue1', name: 'Ligue 1', country: 'France' },
-  { id: 'ucl', name: 'Champions League', country: 'Europe' },
+  { id: 'pl', name: 'Premier League', country: 'England', sport: 'football' },
+  { id: 'laliga', name: 'La Liga', country: 'Spain', sport: 'football' },
+  { id: 'sa', name: 'Serie A', country: 'Italy', sport: 'football' },
+  { id: 'bl', name: 'Bundesliga', country: 'Germany', sport: 'football' },
+  { id: 'ligue1', name: 'Ligue 1', country: 'France', sport: 'football' },
+  { id: 'ucl', name: 'Champions League', country: 'Europe', sport: 'football' },
+  { id: 'nba', name: 'NBA', country: 'USA', sport: 'basketball' },
+  { id: 'ncaa', name: 'NCAA Basketball', country: 'USA', sport: 'basketball' },
+  { id: 'euro', name: 'EuroLeague', country: 'Europe', sport: 'basketball' },
 ] as const
 
 export const PREDICTION_OUTCOMES = ['HOME_WIN', 'DRAW', 'AWAY_WIN'] as const
@@ -32,6 +35,10 @@ export const API_ROUTES = {
     BATCH: '/api/ml/predictions/predict-batch',
     TRAIN: '/api/ml/training/train',
     TRAIN_STATUS: '/api/ml/training/status',
+  },
+  USER_PREDICTIONS: {
+    BASE: '/api/user-predictions',
+    BY_ID: (id: string) => `/api/user-predictions/${id}`,
   },
 } as const
 

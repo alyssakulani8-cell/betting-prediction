@@ -29,6 +29,12 @@ class FootballFeatureEngineer:
         self.k_factor = k_factor
         self.elo_ratings: Dict[str, float] = defaultdict(lambda: initial_elo)
 
+    def get_elo_state(self) -> Dict[str, float]:
+        return dict(self.elo_ratings)
+
+    def set_elo_state(self, elo_state: Dict[str, float]):
+        self.elo_ratings = defaultdict(lambda: self.initial_elo, elo_state)
+
     def build_features(
         self, df: pd.DataFrame, is_training: bool = True
     ) -> pd.DataFrame:
@@ -94,8 +100,16 @@ class FootballFeatureEngineer:
         f["away_injury_index"] = row.get("away_injury_index", 0.0)
 
         f["is_derby"] = self._is_derby(row, home_id, away_id)
+        f["is_promotion_relegation"] = self._is_promotion_relegation(row, home_id, away_id)
+        f["home_cup_motivation"] = row.get("home_cup_motivation", 0.0)
+        f["away_cup_motivation"] = row.get("away_cup_motivation", 0.0)
         f["home_travel_distance"] = row.get("home_travel_distance", 0.0)
         f["away_travel_distance"] = row.get("away_travel_distance", 0.0)
+
+        f["home_xg_avg_10"] = self._avg_goals_for(home_matches, home_id, 10)
+        f["away_xg_avg_10"] = self._avg_goals_for(away_matches, away_id, 10)
+        f["home_xga_avg_10"] = self._avg_goals_against(home_matches, home_id, 10)
+        f["away_xga_avg_10"] = self._avg_goals_against(away_matches, away_id, 10)
 
         if "odds_home" in row and pd.notna(row.get("odds_home")):
             f["odds_home"] = row["odds_home"]
@@ -238,6 +252,9 @@ class FootballFeatureEngineer:
                 return 1
         return 0
 
+    def _is_promotion_relegation(self, row: pd.Series, home_id: str, away_id: str) -> int:
+        return int(row.get("is_promotion_relegation", 0))
+
     def _update_elo(self, home_id: str, away_id: str, row: pd.Series, features: dict):
         """Update ELO ratings after the match (only for training data)."""
         home_score = row.get("home_score")
@@ -268,6 +285,12 @@ class BasketballFeatureEngineer:
         self.initial_elo = initial_elo
         self.k_factor = k_factor
         self.elo_ratings: Dict[str, float] = defaultdict(lambda: initial_elo)
+
+    def get_elo_state(self) -> Dict[str, float]:
+        return dict(self.elo_ratings)
+
+    def set_elo_state(self, elo_state: Dict[str, float]):
+        self.elo_ratings = defaultdict(lambda: self.initial_elo, elo_state)
 
     def build_features(self, df: pd.DataFrame, is_training: bool = True) -> pd.DataFrame:
         df = df.sort_values("date").reset_index(drop=True)
@@ -314,6 +337,18 @@ class BasketballFeatureEngineer:
 
         f["home_form_decay"] = self._form_decay(home_games, home_id)
         f["away_form_decay"] = self._form_decay(away_games, away_id)
+
+        f["home_avg_rebounds_10"] = row.get("home_rebounds", self._avg_stat(home_games, "home_rebounds", 10))
+        f["away_avg_rebounds_10"] = row.get("away_rebounds", self._avg_stat(away_games, "away_rebounds", 10))
+        f["home_avg_assists_10"] = row.get("home_assists", self._avg_stat(home_games, "home_assists", 10))
+        f["away_avg_assists_10"] = row.get("away_assists", self._avg_stat(away_games, "away_assists", 10))
+        f["home_avg_turnovers_10"] = row.get("home_turnovers", self._avg_stat(home_games, "home_turnovers", 10))
+        f["away_avg_turnovers_10"] = row.get("away_turnovers", self._avg_stat(away_games, "away_turnovers", 10))
+
+        f["home_offensive_rating_10"] = self._offensive_rating(home_games, home_id, 10)
+        f["away_offensive_rating_10"] = self._offensive_rating(away_games, away_id, 10)
+        f["home_defensive_rating_10"] = self._defensive_rating(home_games, home_id, 10)
+        f["away_defensive_rating_10"] = self._defensive_rating(away_games, away_id, 10)
 
         h2h = self._head_to_head(history, home_id, away_id)
         f["h2h_home_win_rate"] = h2h["home_win_rate"]
@@ -458,6 +493,37 @@ class BasketballFeatureEngineer:
 
     def _travel_distance(self, row, team_id) -> float:
         return 0.0
+
+    def _avg_stat(self, games: pd.DataFrame, col: str, window: int) -> float:
+        if games.empty or col not in games.columns:
+            return 0.0
+        recent = games.tail(window)
+        vals = recent[col].dropna()
+        return float(vals.mean()) if len(vals) > 0 else 0.0
+
+    def _offensive_rating(self, games: pd.DataFrame, team_id: str, window: int) -> float:
+        if games.empty:
+            return 100.0
+        recent = games.tail(window)
+        pts = []
+        for _, g in recent.iterrows():
+            is_home = str(g["home_team_id"]) == team_id
+            pts.append(g["home_score"] if is_home else g["away_score"])
+        avg_pts = np.mean(pts) if pts else 100.0
+        pace = self._pace(games, team_id, window)
+        return avg_pts / max(pace, 1.0) * 100.0
+
+    def _defensive_rating(self, games: pd.DataFrame, team_id: str, window: int) -> float:
+        if games.empty:
+            return 100.0
+        recent = games.tail(window)
+        pts = []
+        for _, g in recent.iterrows():
+            is_home = str(g["home_team_id"]) == team_id
+            pts.append(g["away_score"] if is_home else g["home_score"])
+        avg_pts = np.mean(pts) if pts else 100.0
+        pace = self._pace(games, team_id, window)
+        return avg_pts / max(pace, 1.0) * 100.0
 
     def _update_elo(self, home_id: str, away_id: str, row):
         home_score = row.get("home_score")

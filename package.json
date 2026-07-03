@@ -1,0 +1,13 @@
+{
+  "name": "betting-prediction",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "backend",
+    "web"
+  ],
+  "scripts": {
+    "build:shared": "npm run build -w shared"
+  }
+}

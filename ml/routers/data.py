@@ -82,7 +82,7 @@ async def upload_data(file: UploadFile = File(...)):
 
 
 @router.get("/features")
-async def get_feature_columns(sport: str = Query("football", regex="^(football|basketball)$")):
+async def get_feature_columns(sport: str = Query("football", pattern="^(football|basketball)$")):
     from config import config
     cols = config.football_feature_columns if sport == "football" else config.basketball_feature_columns
     return {"sport": sport, "features": cols, "count": len(cols)}

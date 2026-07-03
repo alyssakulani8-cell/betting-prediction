@@ -1,19 +1,16 @@
-import { Router, Request, Response } from 'express'
+import { Router, Request, Response, NextFunction } from 'express'
 import { authenticate } from '../middleware/auth'
+import { prisma } from '../config/prisma'
 
 const router = Router()
 
-router.get('/', authenticate, async (_req: Request, res: Response) => {
-  res.json({
-    leagues: [
-      { id: 'pl', name: 'Premier League', country: 'England', logo: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-      { id: 'laliga', name: 'La Liga', country: 'Spain', logo: '🇪🇸' },
-      { id: 'sa', name: 'Serie A', country: 'Italy', logo: '🇮🇹' },
-      { id: 'bl', name: 'Bundesliga', country: 'Germany', logo: '🇩🇪' },
-      { id: 'ligue1', name: 'Ligue 1', country: 'France', logo: '🇫🇷' },
-      { id: 'ucl', name: 'Champions League', country: 'Europe', logo: '🇪🇺' },
-    ],
-  })
+router.get('/', authenticate, async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const leagues = await prisma.league.findMany({ orderBy: { name: 'asc' } })
+    res.json({ leagues })
+  } catch (err) {
+    next(err)
+  }
 })
 
 export default router

@@ -12,10 +12,11 @@ export const config = {
     url: process.env.REDIS_URL || 'redis://localhost:6379',
   },
   ml: {
-    apiUrl: process.env.ML_API_URL || 'http://localhost:8000',
+    apiUrl: process.env.ML_API_URL || 'http://localhost:8000/api/ml',
   },
   apis: {
     footballData: process.env.FOOTBALL_DATA_API_KEY,
     odds: process.env.ODDS_API_KEY,
+    apiSports: process.env.API_SPORTS_KEY,
   },
 }

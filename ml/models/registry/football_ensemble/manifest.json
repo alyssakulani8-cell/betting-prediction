@@ -1,0 +1,53 @@
+[
+  {
+    "version": "v20260701_015535",
+    "timestamp": "2026-07-01T01:55:35.192708",
+    "sport": "football",
+    "model": "xgboost_real_data",
+    "metrics": {
+      "val_accuracy_mean": 0.5190243902439025,
+      "val_accuracy_std": 0.025552782153578157
+    },
+    "feature_columns": [
+      "elo_home",
+      "elo_away",
+      "elo_diff",
+      "home_win_rate_10",
+      "away_win_rate_10",
+      "home_win_rate_38",
+      "away_win_rate_38",
+      "home_avg_goals_scored_10",
+      "away_avg_goals_scored_10",
+      "home_avg_goals_conceded_10",
+      "away_avg_goals_conceded_10"
+    ],
+    "training_samples": 1233,
+    "source": "backend_db"
+  },
+  {
+    "version": "v20260701_183243",
+    "timestamp": "2026-07-01T18:32:43.400713",
+    "sport": "football",
+    "model": "xgboost_csv_data",
+    "metrics": {
+      "val_accuracy_mean": 0.48746993746993744,
+      "val_accuracy_std": 0.014436907124047237
+    },
+    "feature_columns": [
+      "elo_home",
+      "elo_away",
+      "elo_diff",
+      "home_win_rate_10",
+      "away_win_rate_10",
+      "home_win_rate_38",
+      "away_win_rate_38",
+      "home_avg_goals_scored_10",
+      "away_avg_goals_scored_10",
+      "home_avg_goals_conceded_10",
+      "away_avg_goals_conceded_10"
+    ],
+    "training_samples": 49898,
+    "source": "football-data.co.uk + backend",
+    "elo_teams": 574
+  }
+]

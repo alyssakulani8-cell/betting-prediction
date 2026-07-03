@@ -1,6 +1,7 @@
 import axios from 'axios'
+import { API_URL } from '../config'
 
-const api = axios.create({ baseURL: 'http://localhost:5000/api' })
+const api = axios.create({ baseURL: API_URL })
 
 export const authService = {
   login: async (email: string, password: string) => {

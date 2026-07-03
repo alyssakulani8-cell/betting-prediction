@@ -23,23 +23,25 @@ class TrainingConfig(BaseModel):
     leagues: Optional[List[str]] = None
     seasons: Optional[List[str]] = None
     n_trials: int = 30
+    source: str = "api"
 
 
-def _run_training(config: TrainingConfig):
+def _run_training(training_config: TrainingConfig):
     global _training_status
     try:
         _training_status["is_running"] = True
-        _training_status["sport"] = config.sport
+        _training_status["sport"] = training_config.sport
         _training_status["started_at"] = datetime.now().isoformat()
         _training_status["progress"] = 0.0
         _training_status["error"] = None
 
-        pipeline = TrainingPipeline(sport=config.sport)
+        pipeline = TrainingPipeline(sport=training_config.sport)
         result = pipeline.run(
-            leagues=config.leagues,
-            seasons=config.seasons,
+            leagues=training_config.leagues,
+            seasons=training_config.seasons,
             tune=True,
-            n_trials=config.n_trials,
+            n_trials=training_config.n_trials,
+            source=training_config.source,
         )
         _training_status["result"] = result
         _training_status["progress"] = 1.0
@@ -58,7 +60,7 @@ async def start_training(config: TrainingConfig, background_tasks: BackgroundTas
             detail=f"Training already running for {_training_status['sport']} since {_training_status['started_at']}"
         )
 
-    thread = threading.Thread(target=_run_training, args=(config,), daemon=True)
+    thread = threading.Thread(target=_run_training, args=(config,), daemon=True, name="training-thread")
     thread.start()
 
     return {
@@ -82,7 +84,7 @@ async def training_status():
 
 
 @router.get("/history")
-async def training_history(sport: str = Query("football", regex="^(football|basketball)$")):
+async def training_history(sport: str = Query("football", pattern="^(football|basketball)$")):
     from models.registry import ModelRegistry
     from config import config
     registry = ModelRegistry(registry_path=config.registry_path)

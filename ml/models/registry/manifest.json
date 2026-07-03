@@ -1,0 +1,107 @@
+{
+  "football_ensemble_v20260629_062311": {
+    "version": "v20260629_062311",
+    "name": "football_ensemble",
+    "sport": "football",
+    "timestamp": "2026-06-29T06:23:11.493321",
+    "metrics": {
+      "val_accuracy_mean": 0.37402976190476195,
+      "val_accuracy_std": 0.023297071555968146
+    },
+    "params": {
+      "source": "synthetic",
+      "seasons": [
+        "2022",
+        "2023",
+        "2024",
+        "2025"
+      ]
+    },
+    "feature_importance": {
+      "elo_home": 0.7253717528968556,
+      "elo_away": 0.19834709298406525,
+      "elo_diff": 0.07628115411907926
+    },
+    "is_champion": false,
+    "model_path": "models/registry/football_ensemble/v20260629_062311.pkl",
+    "training_samples": 8000
+  },
+  "football_ensemble_v20260629_062800": {
+    "version": "v20260629_062800",
+    "name": "football_ensemble",
+    "sport": "football",
+    "timestamp": "2026-06-29T06:28:01.178783",
+    "metrics": {
+      "val_accuracy_mean": 0.3423670634920635,
+      "val_accuracy_std": 0.022277959083976742
+    },
+    "params": {
+      "source": "synthetic",
+      "seasons": [
+        "2022",
+        "2023",
+        "2024",
+        "2025"
+      ]
+    },
+    "feature_importance": {
+      "elo_home": 0.8331782566513247,
+      "elo_away": 0.11590619283217911,
+      "elo_diff": 0.050915550516496086
+    },
+    "is_champion": false,
+    "model_path": "models/registry/football_ensemble/v20260629_062800.pkl",
+    "training_samples": 4000
+  },
+  "football_ensemble_v20260701_015535": {
+    "version": "v20260701_015535",
+    "name": "football_ensemble",
+    "sport": "football",
+    "timestamp": "2026-07-01T01:55:35",
+    "metrics": {
+      "val_accuracy_mean": 0.519,
+      "val_accuracy_std": 0.0256,
+      "source": "backend_db (1233 real matches)"
+    },
+    "params": {
+      "source": "backend_db",
+      "model": "xgboost",
+      "feature_columns": [
+        "elo_home",
+        "elo_away",
+        "elo_diff",
+        "home_win_rate_10",
+        "away_win_rate_10",
+        "home_win_rate_38",
+        "away_win_rate_38",
+        "home_avg_goals_scored_10",
+        "away_avg_goals_scored_10",
+        "home_avg_goals_conceded_10",
+        "away_avg_goals_conceded_10"
+      ]
+    },
+    "feature_importance": null,
+    "is_champion": false,
+    "model_path": "models/registry/football_ensemble/champion.pkl",
+    "training_samples": 1233
+  },
+  "football_ensemble_v20260701_183243": {
+    "version": "v20260701_183243",
+    "name": "football_ensemble",
+    "sport": "football",
+    "timestamp": "2026-07-01T18:32:43",
+    "metrics": {
+      "val_accuracy_mean": 0.4875,
+      "val_accuracy_std": 0.0144
+    },
+    "params": {
+      "leagues": null,
+      "seasons": null,
+      "source": "football-data.co.uk"
+    },
+    "feature_importance": null,
+    "is_champion": true,
+    "model_path": "C:\\Users\\Hp\\betting-prediction\\ml\\models\\registry\\football_ensemble\\xgb_csv_data.pkl",
+    "training_samples": 49898
+  }
+}

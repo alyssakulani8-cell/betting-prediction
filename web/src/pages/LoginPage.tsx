@@ -14,8 +14,8 @@ export default function LoginPage() {
     try {
       await login(email, password)
       navigate('/')
-    } catch {
-      setError('Invalid credentials')
+    } catch (err: any) {
+      setError(err?.response?.data?.error || err?.message || 'Invalid credentials')
     }
   }
 

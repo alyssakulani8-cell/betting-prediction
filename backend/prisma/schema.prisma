@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./betting.db"
 }
 
 model User {
@@ -15,22 +15,64 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  predictions UserPrediction[]
-  preferences UserPreference?
+  predictions     UserPrediction[]
+  preferences     UserPreference?
+  gamblingLimit   GamblingLimit?
+  bettingSessions BettingSession[]
 
   @@map("users")
 }
 
 model UserPreference {
-  id                  String @id @default(uuid())
-  userId              String @unique @map("user_id")
-  notificationLevel   String @default("all") @map("notification_level")
-  defaultLeague       String? @map("default_league")
-  theme               String @default("dark")
+  id                String @id @default(uuid())
+  userId            String @unique @map("user_id")
+  notificationLevel String @default("all") @map("notification_level")
+  defaultLeague     String? @map("default_league")
+  theme             String @default("dark")
+
+  favoriteLeagues   String? @map("favorite_leagues")
+  favoriteTeams     String? @map("favorite_teams")
+  preferredBetTypes String? @map("preferred_bet_types")
+  riskTolerance     String @default("medium") @map("risk_tolerance")
+  maxStake          Float? @map("max_stake")
+  monthlyBudget     Float? @map("monthly_budget")
+  maxDailyBets      Int? @map("max_daily_bets")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_preferences")
+}
+
+model GamblingLimit {
+  id                String    @id @default(uuid())
+  userId            String    @unique @map("user_id")
+  dailyLossLimit    Float?    @map("daily_loss_limit")
+  weeklyLossLimit   Float?    @map("weekly_loss_limit")
+  monthlyDepositLimit Float?  @map("monthly_deposit_limit")
+  maxStakePerBet    Float?    @map("max_stake_per_bet")
+  coolOffUntil      DateTime? @map("cool_off_until")
+  selfExcluded      Boolean   @default(false) @map("self_excluded")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("gambling_limits")
+}
+
+model BettingSession {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  startTime  DateTime  @map("start_time")
+  endTime    DateTime? @map("end_time")
+  betsPlaced Int       @default(0) @map("bets_placed")
+  totalStake Float     @default(0) @map("total_stake")
+  netProfit  Float     @default(0) @map("net_profit")
+  status     String    @default("active")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("betting_sessions")
 }
 
 model League {
@@ -38,6 +80,7 @@ model League {
   name    String
   country String
   logo    String?
+  sport   String @default("football")
 
   matches Match[]
 
@@ -75,8 +118,45 @@ model Match {
   awayTeam  Team   @relation("AwayTeam", fields: [awayTeamId], references: [id])
 
   predictions UserPrediction[]
+  odds        MatchOdds?
+  aiPrediction AiPrediction?
 
   @@map("matches")
+}
+
+model MatchOdds {
+  id        String  @id @default(uuid())
+  matchId   String  @unique @map("match_id")
+  homeWin   Float   @map("home_win")
+  draw      Float?
+  awayWin   Float   @map("away_win")
+  overUnder Float?  @map("over_under")
+  overPrice Float?  @map("over_price")
+  underPrice Float? @map("under_price")
+  bttsYes   Float?  @map("btts_yes")
+  bttsNo    Float?  @map("btts_no")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@map("match_odds")
+}
+
+model AiPrediction {
+  id           String   @id @default(uuid())
+  matchId      String   @unique @map("match_id")
+  homeWinProb  Float    @map("home_win_prob")
+  drawProb     Float?   @map("draw_prob")
+  awayWinProb  Float    @map("away_win_prob")
+  predictedHomeGoals Float? @map("predicted_home_goals")
+  predictedAwayGoals Float? @map("predicted_away_goals")
+  confidence   Float
+  modelVersion String?  @map("model_version")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@map("ai_predictions")
 }
 
 model UserPrediction {
@@ -85,8 +165,15 @@ model UserPrediction {
   matchId    String   @map("match_id")
   predictedWinner String @map("predicted_winner")
   confidence Float
+  stake      Float?   @default(0)
+  odds       Float?   @map("odds_at_time")
+  betType    String   @default("moneyline") @map("bet_type")
+  spread     Float?   @map("spread")
+  overUnder  Float?   @map("over_under")
   result     String?
   profit     Float?
+  isResolved Boolean  @default(false) @map("is_resolved")
+  resolvedAt DateTime? @map("resolved_at")
   createdAt  DateTime @default(now()) @map("created_at")
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -106,7 +193,7 @@ model ModelRecord {
   roi           Float?
   trainingSamples Int?   @map("training_samples")
   isChampion    Boolean  @default(false) @map("is_champion")
-  params        Json?
+  params        String?
   createdAt     DateTime @default(now()) @map("created_at")
 
   @@unique([name, version])
@@ -116,7 +203,7 @@ model ModelRecord {
 model PredictionCache {
   id        String   @id @default(uuid())
   matchKey  String   @unique @map("match_key")
-  result    Json
+  result    String
   confidence Float
   createdAt DateTime @default(now()) @map("created_at")
   expiresAt DateTime @map("expires_at")

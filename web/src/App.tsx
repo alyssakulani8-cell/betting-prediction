@@ -6,8 +6,15 @@ import DashboardPage from '@/pages/DashboardPage'
 import AnalysisPage from '@/pages/AnalysisPage'
 import LeaguesPage from '@/pages/LeaguesPage'
 import SettingsPage from '@/pages/SettingsPage'
+import MyPredictionsPage from '@/pages/MyPredictionsPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
+import BasketballPage from '@/pages/BasketballPage'
+import AccuracyPage from '@/pages/AccuracyPage'
+import AnalyticsDashboardPage from '@/pages/AnalyticsDashboardPage'
+import CoachingPage from '@/pages/CoachingPage'
+import SessionsPage from '@/pages/SessionsPage'
+import MatchDetailPage from '@/pages/MatchDetailPage'
 import { AuthProvider } from '@/contexts/AuthContext'
 import ProtectedRoute from '@/components/ProtectedRoute'
 
@@ -24,6 +31,13 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/analysis" element={<AnalysisPage />} />
             <Route path="/leagues" element={<LeaguesPage />} />
+            <Route path="/my-predictions" element={<MyPredictionsPage />} />
+            <Route path="/basketball" element={<BasketballPage />} />
+            <Route path="/accuracy" element={<AccuracyPage />} />
+            <Route path="/analytics" element={<AnalyticsDashboardPage />} />
+            <Route path="/coaching" element={<CoachingPage />} />
+            <Route path="/sessions" element={<SessionsPage />} />
+            <Route path="/match/:id" element={<MatchDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>

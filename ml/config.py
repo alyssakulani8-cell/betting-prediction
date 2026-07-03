@@ -19,6 +19,7 @@ class Config:
     football_api_key: str = os.getenv("FOOTBALL_DATA_API_KEY", "")
     odds_api_key: str = os.getenv("ODDS_API_KEY", "")
     basketball_api_key: str = os.getenv("BASKETBALL_API_KEY", "")
+    backend_db_path: str = os.getenv("BACKEND_DB_PATH", "")
 
     football_base_url: str = "https://api.football-data.org/v4/"
     odds_base_url: str = "https://api.the-odds-api.com/v4/"

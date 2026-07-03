@@ -3,8 +3,14 @@ import { clsx } from 'clsx'
 
 const navItems = [
   { to: '/', label: 'Home', icon: '🏠' },
-  { to: '/predictions', label: 'Predictions', icon: '📊' },
+  { to: '/predictions', label: 'Football', icon: '⚽' },
+  { to: '/basketball', label: 'Basketball', icon: '🏀' },
+  { to: '/my-predictions', label: 'My Picks', icon: '🎯' },
+  { to: '/analytics', label: 'Analytics', icon: '📊' },
+  { to: '/coaching', label: 'Coach', icon: '🧠' },
+  { to: '/sessions', label: 'Sessions', icon: '⏱️' },
   { to: '/dashboard', label: 'Dashboard', icon: '📈' },
+  { to: '/accuracy', label: 'Accuracy', icon: '🎯' },
   { to: '/analysis', label: 'Analysis', icon: '🔍' },
   { to: '/leagues', label: 'Leagues', icon: '🏆' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },

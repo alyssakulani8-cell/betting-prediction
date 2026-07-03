@@ -15,8 +15,8 @@ export default function RegisterPage() {
     try {
       await register(name, email, password)
       navigate('/')
-    } catch {
-      setError('Registration failed')
+    } catch (err: any) {
+      setError(err?.response?.data?.error || err?.message || 'Registration failed')
     }
   }
 

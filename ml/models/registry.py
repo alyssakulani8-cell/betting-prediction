@@ -78,6 +78,10 @@ class ModelRegistry:
 
         return version
 
+    def refresh_manifest(self):
+        """Re-read manifest from disk (e.g., after external training)."""
+        self._manifest = self._load_manifest()
+
     def load_champion(self, name: str):
         champion_path = self.path / name / "champion.pkl"
         if champion_path.exists():
